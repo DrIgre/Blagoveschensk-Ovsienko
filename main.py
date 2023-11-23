@@ -1,77 +1,49 @@
 import sys
-from PyQt5.QtWidgets import QWidget, QApplication
-from math import cos, sin, pi
-from PyQt5.QtGui import QPainter, QColor
-from PyQt5.QtCore import Qt, QPoint
-from random import randint
+import requests
+import sqlite3
+import datetime
+import json
+from PySide6.QtWidgets import QMainWindow, QApplication
+from Perva import Ui_Form
 
 
-# yo chto kak?
-class Suprematism(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.initUI()
-        self.setMouseTracking(True)
-        self.qp = QPainter()
-        self.coor = tuple()
-        self.draw_figure = None
-        self.flag = False
-
-    def initUI(self):
-        self.setGeometry(300, 300, 1000, 1000)
-        self.setWindowTitle('Рисование')
-
-    def mousePressEvent(self, event):
-        self.coor = (event.x(), event.y())
-        if event.button() == Qt.LeftButton:
-            self.draw_figure = 'circle'
-            self.drawf()
-        elif event.button() == Qt.RightButton:
-            self.draw_figure = 'square'
-            self.drawf()
-
-    def mouseMoveEvent(self, event):
-        self.coor = (event.x(), event.y())
-
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Space:
-            self.draw_figure = 'triangle'
-            self.drawf()
-
-    def drawf(self):
-        self.flag = True
-        self.update()
-
-    def paintEvent(self, event):
-        if self.flag:
-            self.qp = QPainter()
-            self.qp.begin(self)
-            self.type_figure()
-            self.qp.end()
-
-    def type_figure(self):
-        if self.draw_figure == 'circle':
-            R = randint(20, 100)
-            self.qp.setBrush(QColor(randint(0, 255), randint(0, 255), randint(0, 255)))
-            self.qp.drawEllipse(int(self.coor[0] - R / 2), int(self.coor[1] - R / 2), R, R)
-        elif self.draw_figure == 'square':
-            N = randint(20, 100)
-            self.qp.setBrush(QColor(randint(0, 255), randint(0, 255), randint(0, 255)))
-            self.qp.drawRect(int(self.coor[0] - N / 2), int(self.coor[1] - N / 2), N, N)
-        elif self.draw_figure == 'triangle':
-            A = randint(20, 100)
-            self.qp.setBrush(QColor(randint(0, 255), randint(0, 255), randint(0, 255)))
-            x, y = self.coor
-            coords = [QPoint(x, y - A),
-                      QPoint(int(x + cos(7 * pi / 6) * A),
-                             int(y - sin(7 * pi / 6) * A)),
-                      QPoint(int(x + cos(11 * pi / 6) * A),
-                             int(y - sin(11 * pi / 6) * A))]
-            self.qp.drawPolygon(coords)
+def set_infoWin(form: Ui_Form, **kwargs):
+    dich = {'cloud_pct': 0, 'temp': 0, 'feels_like': 0, 'humidity': 0, 'min_temp': 0,
+            'max_temp': 0, 'wind_speed': 0, 'wind_degrees': 0, 'sunrise': 0,
+            'sunset': 0, 'city': 'London'}
+    dich.update(kwargs)
+    now = datetime.datetime.now()
+    form.label.setText(f"Сейчас {now.hour:0>2}:{now.minute:0>2}.")
+    form.label_2.setText(f"Город: {dich['city']}")
+    form.label_3.setText(str(dich["temp"])+"°")
+    form.label_4.setText(f"Восход {datetime.datetime.fromtimestamp(dich['sunrise']).strftime('%H:%M')}. Закат {datetime.datetime.fromtimestamp(dich['sunset']).strftime('%H:%M')}.")
+    form.label_5.setText("Ветер: " + " " + str(dich["wind_speed"]) + "м/с " + ["Север", "Восток", "Юг", "Запад"][((dich["wind_degrees"] + 45) // 90) % 4])
+    form.label_6.setText("Влажность: " + str(dich["humidity"]) + "%")
 
 
-if __name__ == '__main__':
+def get_weather(city='london'):
+    api_url = 'https://api.api-ninjas.com/v1/weather?city={}'.format(city)
+    response = requests.get(api_url, headers={'X-Api-Key': 'ITskvCvFnJcN6G9kM+nShw==Ty1ElCMBsIhtTpQh'})
+    if response.status_code == requests.codes.ok:
+        res = {"city": city}
+        res.update(json.loads(response.text))
+        return res
+    else:
+        raise Exception("Error: " + str(response.status_code) + " " + response.text)
+
+
+def main():
     app = QApplication(sys.argv)
-    ex = Suprematism()
-    ex.show()
-    sys.exit(app.exec_())
+    win = QMainWindow()
+    ui = Ui_Form()
+    ui.setupUi(win)
+
+    pcd = {'cloud_pct': 20, 'temp': 11, 'feels_like': 10, 'humidity': 73, 'min_temp': 9, 'max_temp': 12, 'wind_speed': 6.17, 'wind_degrees': 250, 'sunrise': 1699513643, 'sunset': 1699546876}
+    set_infoWin(ui, **pcd)
+    win.show()
+    sys.exit(app.exec())
+
+
+# Press the green button in the gutter to run the script.
+if __name__ == '__main__':
+    main()
