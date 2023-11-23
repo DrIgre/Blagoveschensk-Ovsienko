@@ -3,8 +3,35 @@ import requests
 import sqlite3
 import datetime
 import json
-from PySide6.QtWidgets import QMainWindow, QApplication
+from PySide6.QtWidgets import QMainWindow, QApplication, QLineEdit, QPushButton
+from PySide6.QtCore import QRect
 from Perva import Ui_Form
+
+
+class FirstWindow:
+    city = 'London'
+
+    def setCity(self):
+        self.city = self.lineEdit.text()
+        self.openMain()
+
+    def openMain(self):
+        self.form.close()
+        self.form = QMainWindow()
+        ui = Ui_Form()
+        ui.setupUi(self.form)
+        set_infoWin(ui, **get_weather(city=self.city))
+        self.form.show()
+
+    def setupUi(self, form: QMainWindow):
+        self.form = form
+        form.resize(320, 40)
+        self.lineEdit = QLineEdit(form)
+        self.lineEdit.setGeometry(QRect(10, 10, 250, 20))
+        self.pushButton = QPushButton(form)
+        self.pushButton.setGeometry(QRect(265, 10, 45, 20))
+        self.pushButton.setText("accept")
+        self.pushButton.clicked.connect(self.setCity)
 
 
 def set_infoWin(form: Ui_Form, **kwargs):
@@ -35,11 +62,11 @@ def get_weather(city='london'):
 def main():
     app = QApplication(sys.argv)
     win = QMainWindow()
-    ui = Ui_Form()
+    ui = FirstWindow()
     ui.setupUi(win)
 
-    pcd = {'cloud_pct': 20, 'temp': 11, 'feels_like': 10, 'humidity': 73, 'min_temp': 9, 'max_temp': 12, 'wind_speed': 6.17, 'wind_degrees': 250, 'sunrise': 1699513643, 'sunset': 1699546876}
-    set_infoWin(ui, **pcd)
+#    pcd = {'cloud_pct': 20, 'temp': 11, 'feels_like': 10, 'humidity': 73, 'min_temp': 9, 'max_temp': 12, 'wind_speed': 6.17, 'wind_degrees': 250, 'sunrise': 1699513643, 'sunset': 1699546876}
+#    set_infoWin(ui, **pcd)
     win.show()
     sys.exit(app.exec())
 
